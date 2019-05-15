@@ -31,6 +31,9 @@ bundle agent init
     "file_3"            string => "${tmp}/test3.ini";
     "reference_file_3"  string => "${tmp}/ref3.ini";
     "file_3_canon"      string => canonify("${file_3}");
+    "file_4"            string => "${tmp}/test4.ini";
+    "reference_file_4"  string => "${tmp}/ref4.ini";
+    "file_4_canon"      string => canonify("${file_4}");
 
 # First test: ensure that a line is really added into the right section
 # with lines already present.
@@ -60,34 +63,26 @@ ${base_text_up}";
     "reference_3"       string => "[${section_3}]
 ${name_3}=${new_value_3}";
 
-  commands:
-# Initialize first test files
-    "/bin/echo"
-      args    => "\"${reference_1}\" > \"${reference_file_1}\"",
-      contain => in_shell;
-   "/bin/echo"
-      args    => "\"${base_text_up}\" > \"${file_1}\"",
-      contain => in_shell;
-   "/bin/echo"
-      args    => "\"${base_text_down}\" >> \"${file_1}\"",
-      contain => in_shell;
-# Initialize second test files
-    "/bin/echo"
-      args    => "\"${reference_2}\" > \"${reference_file_2}\"",
-      contain => in_shell;
-   "/bin/echo"
-      args    => "\"${base_text_up}\" > \"${file_2}\"",
-      contain => in_shell;
-# Initialize third test files
-    "/bin/echo"
-      args    => "\"${reference_3}\" > \"${reference_file_3}\"",
-      contain => in_shell;
-   "/bin/echo"
-      args    => "\"${base_text_up}\" > \"${file_3}\"",
-      contain => in_shell;
-  "/bin/echo"
-      args    => "\"${name_3}=${value_3}\" >> \"${file_3}\"",
-      contain => in_shell;
+# ensure that quotes are correctly escaped
+    "section_4"         string => "section_test1";
+    "name_4"            string => "name";
+    "value_4"           string => "\"value\"";
+    "new_value_4"       string => "\"newvalue\"";
+    "reference_4"       string => "[${section_4}]
+${name_4} = ${new_value_4}";
+
+  methods:
+    "any" usebundle => file_content("${reference_file_1}", "${reference_1}", "true");
+    "any" usebundle => file_content("${file_1}", "${base_text_up}${const.n}${base_text_down}", "true");
+
+    "any" usebundle => file_content("${reference_file_2}", "${reference_2}", "true");
+    "any" usebundle => file_content("${file_2}", "${base_text_up}", "true");
+
+    "any" usebundle => file_content("${reference_file_3}", "${reference_3}", "true");
+    "any" usebundle => file_content("${file_3}", "${base_text_up}${const.n}${name_3}=${value_3}", "true");
+
+    "any" usebundle => file_content("${reference_file_4}", "${reference_4}", "true");
+    "any" usebundle => file_content("${file_4}", "${base_text_up}${const.n}${name_4} = ${value_4}", "true");
 }
 
 #######################################################
@@ -98,6 +93,7 @@ bundle agent test
     "ph1" usebundle => file_key_value_present_in_ini_section("${init.file_1}", "${init.section_1}", "${init.name_1}", "${init.value_1}");
     "ph2" usebundle => file_key_value_present_in_ini_section("${init.file_2}", "${init.section_2}", "${init.name_2}", "${init.value_2}");
     "ph3" usebundle => file_key_value_present_in_ini_section("${init.file_3}", "${init.section_3}", "${init.name_3}", "${init.new_value_3}");
+    "ph4" usebundle => file_key_value_present_in_ini_section("${init.file_4}", "${init.section_4}", "${init.name_4}", "${init.new_value_4}");
 }
 
 #######################################################
@@ -110,6 +106,7 @@ bundle agent check
     "line_1_exists_test" string => "/usr/bin/diff \"${init.reference_file_1}\" \"${init.file_1}\"";
     "line_2_exists_test" string => "/usr/bin/diff \"${init.reference_file_2}\" \"${init.file_2}\"";
     "line_3_exists_test" string => "/usr/bin/diff \"${init.reference_file_3}\" \"${init.file_3}\"";
+    "line_4_exists_test" string => "/usr/bin/diff \"${init.reference_file_4}\" \"${init.file_4}\"";
 
   classes:
     "line_1_exists"
@@ -121,11 +118,15 @@ bundle agent check
     "line_3_exists"
        expression => returnszero("${line_3_exists_test}", "noshell"),
        ifvarclass => canonify("file_key_value_present_in_ini_section_${init.file_3}_reached");
+    "line_4_exists"
+       expression => returnszero("${line_4_exists_test}", "noshell"),
+       ifvarclass => canonify("file_key_value_present_in_ini_section_${init.file_4}_reached");
 
     "ok_test1"    expression => "line_1_exists.file_key_value_present_in_ini_section_${init.file_1_canon}_ok.!file_1_line_present_in_ini_section_${init.file_1_canon}_error";
     "ok_test2"    expression => "line_2_exists.file_key_value_present_in_ini_section_${init.file_2_canon}_ok.!file_2_line_present_in_ini_section_${init.file_2_canon}_error";
     "ok_test3"    expression => "line_3_exists.file_key_value_present_in_ini_section_${init.file_3_canon}_ok.!file_3_line_present_in_ini_section_${init.file_3_canon}_error";
-    "ok"          and => {"ok_test1","ok_test2","ok_test3"};
+    "ok_test4"    expression => "line_4_exists.file_key_value_present_in_ini_section_${init.file_4_canon}_ok.!file_4_line_present_in_ini_section_${init.file_4_canon}_error";
+    "ok"          and => {"ok_test1","ok_test2","ok_test3","ok_test4"};
 
   reports:
     ok::

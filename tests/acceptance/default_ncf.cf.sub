@@ -23,6 +23,11 @@ bundle common ncf_configuration {
       "ncf_configuration_file" string => "${ncf_configuration_basedir}/ncf.conf";
 }
 
+bundle common configuration {
+  vars:
+      "enabled_loggers" slist => { "_log_default" };
+}
+
 bundle common test_utils {
 
   vars:
